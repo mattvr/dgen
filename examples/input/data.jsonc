@@ -1,0 +1,29 @@
+{
+  // This is a JSONC file, which means it's a JSON file with comments.
+  "players": [
+    {
+      "name": "art3mis",
+      "level": 10,
+      "isOnline": true,
+      "notes": "This ain't no game, kid!"
+    },
+    {
+      "name": "parzival",
+      "level": 5,
+      "isOnline": false,
+      "notes": "I'm not a gunter, I'm a gamer."
+    },
+    {
+      "name": "aech",
+      "level": 7,
+      "isOnline": true,
+      "notes": "It is on like Red Dawn!"
+    },
+    {
+      "name": "gunter",
+      "level": 2,
+      "isOnline": false,
+      "notes": "I support the OASIS."
+    }
+  ]
+}

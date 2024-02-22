@@ -1,0 +1,14 @@
+{
+  "sections": {
+    "header": {
+      "title": "dgen markdown template",
+      "content": "This is the header."
+    },
+    "content": {
+      "content": "## Hello, World!\n\nThis is a simple example of a markdown template."
+    },
+    "footer": {
+      "content": "This is the footer."
+    }
+  }
+}

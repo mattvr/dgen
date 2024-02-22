@@ -1,0 +1,15 @@
+*
+!.gitignore
+!etc
+!examples
+!examples/**
+!templates
+!scripts
+!**/*.ts
+!**/*.md
+!**/*.svg
+!**/*.png
+!**/*.json
+!**/*.jsonc
+!**/*.sh
+!**/*.vto
