@@ -23,7 +23,7 @@ Generate Markdown, Typescript, and much more. Check out the full [examples](exam
 [Install Deno](https://docs.deno.com/runtime/manual) and ensure it is in your
 path.
 
-Then, run: `deno install -frA --name=dgen mod.ts`
+Then, run: `deno install -frA --name=dgen https://deno.land/x/dgen/mod.ts`
 
 This will install `dgen` as a command line utility.
 
