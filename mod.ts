@@ -2,6 +2,7 @@ import vento from "https://deno.land/x/vento@v0.12.1/mod.ts";
 import { Filter } from "https://deno.land/x/vento@v0.12.1/src/environment.ts";
 import { parse as parseJsonc } from "https://deno.land/std@0.212.0/jsonc/parse.ts";
 import { parseArgs } from "https://deno.land/std@0.212.0/cli/parse_args.ts";
+import * as path from "https://deno.land/std@0.212.0/path/mod.ts";
 
 /**
  * Arguments object to pass to the codegen(...) function.
@@ -98,6 +99,32 @@ export const DEFAULT_ARGS: Partial<CodegenArgs> = {
 /**
  * Generate code from a Vento template and optional processor file
  * @param args Arguments object to pass to the code
+ * @param args.templateVtoPath Full path to the template file (vento .vto 
+ * template)
+ * @param args.processorTsPath Full path to processor file [optional], which 
+ * will pass data and additional filters to the template. Must export a
+ * default function that takes an optional data Json object and returns an
+ * object with the final data and filters to pass to the template, like so:
+ * ```ts
+ * export default (dataJson: any) => ({
+ *  data: {
+ *    myVar: "yeet",
+ *    hello() {
+ *      return "hello world";
+ *    },
+ *    filters: {
+ *      upper: (str: string) => str.toUpperCase(),
+ *    }
+ * });
+ * ```
+ * @param args.dataJsonPath JSON string to pass to the template as data.
+ * @param args.outputPath Full path to the final output file, can be any file 
+ * type (.ts, .json, .md, etc.)
+ * @param args.filters Filters to pass to the template, which are arbitrary 
+ * functions that can transform any variable.
+ * @param args.data Arbitrary data to pass to the template
+ * @param args.flags Additional flags to run alongside the codegen process
+ * @param args.error Optional error handler
  * @returns Generated code as a string
  */
 export const codegen = async (args: CodegenArgs): Promise<string> => {
@@ -139,7 +166,9 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
 
   if (processorTsPath) {
     try {
-      const processor = (await import(processorTsPath)).default;
+      // Resolve as http(s) URL or file path relative to current working directory
+      const processorTsPathResolved = processorTsPath.startsWith('http') ? processorTsPath : path.resolve(Deno.cwd(), processorTsPath);
+      const processor = (await import(processorTsPathResolved)).default;
       const result = await processor(processorData);
 
       processorData = result.data;
