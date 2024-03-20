@@ -3,7 +3,10 @@ import { Filter } from "https://deno.land/x/vento@v0.12.1/src/environment.ts";
 import { parse as parseJsonc } from "https://deno.land/std@0.212.0/jsonc/parse.ts";
 import { parseArgs } from "https://deno.land/std@0.212.0/cli/parse_args.ts";
 
-type CodegenArgs = {
+/**
+ * Arguments object to pass to the codegen(...) function.
+ */
+export type CodegenArgs = {
   /**
    * Full path to the template file (vento .vto template)
    */
@@ -74,7 +77,10 @@ type CodegenArgs = {
   error?: (err: Error) => void;
 }
 
-const DEFAULT_ARGS: Partial<CodegenArgs> = {
+/**
+ * Default arguments for codegen(...) function
+ */
+export const DEFAULT_ARGS: Partial<CodegenArgs> = {
   templateVtoPath: "template.vto",
   filters: {
     upper: (str: string) => str.toUpperCase(),
@@ -89,6 +95,11 @@ const DEFAULT_ARGS: Partial<CodegenArgs> = {
   flags: ['fmt', 'check', 'print_info'],
 };
 
+/**
+ * Generate code from a Vento template and optional processor file
+ * @param args Arguments object to pass to the code
+ * @returns Generated code as a string
+ */
 export const codegen = async (args: CodegenArgs): Promise<string> => {
   const startTime = performance.now();
   const {

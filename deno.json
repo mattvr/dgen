@@ -1,0 +1,5 @@
+{
+  "name": "@mattvr/dgen",
+  "version": "0.0.2",
+  "exports": "./mod.ts"
+}
