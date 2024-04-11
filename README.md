@@ -1,6 +1,7 @@
 <p align="center"><a href="https://github.com/mattvr/dgen">
 <img src="/etc/dgen.svg" ></a></p>
 <p align="center"><strong>Turn data into generated code and text files.</strong></p>
+<h4 align="center"><strong><a href="https://discord.gg/JyuM6KA5hp"><img src="https://github.com/mattvr/ShellGPT/assets/4052466/9ba871c8-451c-4178-9035-645142b617d9" /> Discord </a></strong></h4>
 
 ---
 
