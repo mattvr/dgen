@@ -1,8 +1,9 @@
-import vento from "jsr:@vento/vento";
-import type { Filter } from "https://deno.land/x/vento@v0.12.5/src/environment.ts";
-import { parse as parseJsonc } from "https://deno.land/std@0.212.0/jsonc/parse.ts";
-import { parseArgs } from "https://deno.land/std@0.212.0/cli/parse_args.ts";
-import * as path from "https://deno.land/std@0.212.0/path/mod.ts";
+import vento from "jsr:@vento/vento@^1.12";
+import { parse as parseJsonc } from "jsr:@std/jsonc@1";
+import { parseArgs } from "jsr:@std/cli@1";
+import * as path from "jsr:@std/path@1";
+
+type Filter = ReturnType<typeof vento>["filters"][string];
 
 /**
  * Arguments object to pass to the codegen(...) function.
