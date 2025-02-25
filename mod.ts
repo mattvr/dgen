@@ -1,5 +1,5 @@
-import vento from "https://deno.land/x/vento@v0.12.1/mod.ts";
-import { Filter } from "https://deno.land/x/vento@v0.12.1/src/environment.ts";
+import vento from "jsr:@vento/vento";
+import type { Filter } from "https://deno.land/x/vento@v0.12.5/src/environment.ts";
 import { parse as parseJsonc } from "https://deno.land/std@0.212.0/jsonc/parse.ts";
 import { parseArgs } from "https://deno.land/std@0.212.0/cli/parse_args.ts";
 import * as path from "https://deno.land/std@0.212.0/path/mod.ts";
@@ -14,20 +14,20 @@ export type CodegenArgs = {
   templateVtoPath: string;
 
   /**
-   * Full path to processor file [optional], which will pass data and 
+   * Full path to processor file [optional], which will pass data and
    * additional filters to the template.
-   * 
-   * This file should export a function (or async function) that 
-   * takes an optional data Json object and returns an object with the final 
+   *
+   * This file should export a function (or async function) that
+   * takes an optional data Json object and returns an object with the final
    * data and filters to pass to the template.
-   * 
+   *
    * Example:
    * ```ts
    * export default (dataJson: any) => ({
-   *  data: { 
+   *  data: {
    *    myVar: "yeet",
    *    hello() {
-   *      return "hello world";  
+   *      return "hello world";
    *    },
    *  filters: {
    *    upper: (str: string) => str.toUpperCase(),
@@ -38,7 +38,7 @@ export type CodegenArgs = {
   processorTsPath?: string;
 
   /**
-   * JSON string to pass to the template as data. 
+   * JSON string to pass to the template as data.
    * This can be either a JSON or JSONC (JSON with comments) file.
    */
   dataJsonPath?: string;
@@ -51,7 +51,7 @@ export type CodegenArgs = {
   /**
    * Filters to pass to the template, which are arbitrary functions that
    * can transform any variable.
-   * 
+   *
    * Read about filters here:
    * https://vento.js.org/syntax/pipes/
    */
@@ -60,7 +60,7 @@ export type CodegenArgs = {
   /**
    * Arbitrary data to pass to the template
    * Can be functions, objects, arrays, etc.
-   * 
+   *
    * Read more about using data in templates here:
    * https://vento.js.org/syntax/print/
    */
@@ -70,13 +70,13 @@ export type CodegenArgs = {
    * Additional flags to run alongside the codegen process
    * For example, formatting and checking the output is valid TypeScript
    */
-  flags?: ('fmt' | 'check' | 'print_info')[]
+  flags?: ("fmt" | "check" | "print_info")[];
 
   /**
    * Optional error handler
    */
   error?: (err: Error) => void;
-}
+};
 
 /**
  * Default arguments for codegen(...) function
@@ -91,17 +91,17 @@ export const DEFAULT_ARGS: Partial<CodegenArgs> = {
     name: "Bobert Paulson",
     hello() {
       return "sup dawg";
-    }
+    },
   },
-  flags: ['fmt', 'check', 'print_info'],
+  flags: ["fmt", "check", "print_info"],
 };
 
 /**
  * Generate code from a Vento template and optional processor file
  * @param args Arguments object to pass to the code
- * @param args.templateVtoPath Full path to the template file (vento .vto 
+ * @param args.templateVtoPath Full path to the template file (vento .vto
  * template)
- * @param args.processorTsPath Full path to processor file [optional], which 
+ * @param args.processorTsPath Full path to processor file [optional], which
  * will pass data and additional filters to the template. Must export a
  * default function that takes an optional data Json object and returns an
  * object with the final data and filters to pass to the template, like so:
@@ -118,9 +118,9 @@ export const DEFAULT_ARGS: Partial<CodegenArgs> = {
  * });
  * ```
  * @param args.dataJsonPath JSON string to pass to the template as data.
- * @param args.outputPath Full path to the final output file, can be any file 
+ * @param args.outputPath Full path to the final output file, can be any file
  * type (.ts, .json, .md, etc.)
- * @param args.filters Filters to pass to the template, which are arbitrary 
+ * @param args.filters Filters to pass to the template, which are arbitrary
  * functions that can transform any variable.
  * @param args.data Arbitrary data to pass to the template
  * @param args.flags Additional flags to run alongside the codegen process
@@ -154,10 +154,9 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
       if (parsedData) {
         processorData = parsedData;
       }
-    }
-    catch (err) {
+    } catch (err) {
       if (error) {
-        error(err);
+        error(err as Error);
       }
       console.error(err);
       failures.push(`data (${dataJsonPath})`);
@@ -167,36 +166,37 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
   if (processorTsPath) {
     try {
       // Resolve as http(s) URL or file path relative to current working directory
-      const processorTsPathResolved = processorTsPath.startsWith('http') ? processorTsPath : path.resolve(Deno.cwd(), processorTsPath);
+      const processorTsPathResolved = processorTsPath.startsWith("http")
+        ? processorTsPath
+        : path.resolve(Deno.cwd(), processorTsPath);
       const processor = (await import(processorTsPathResolved)).default;
       const result = await processor(processorData);
 
       processorData = result.data;
       processorFilters = result.filters;
-    }
-    catch (err) {
+    } catch (err) {
       if (error) {
-        error(err);
+        error(err as Error);
       }
       console.error(err);
-      failures.push(`processor (${processorTsPath})`)
+      failures.push(`processor (${processorTsPath})`);
     }
   }
 
   if (processorFilters) {
-    env.filters = { ...processorFilters }
-  }
-  else {
+    env.filters = { ...processorFilters };
+  } else {
     env.filters = { ...filters };
   }
 
   let output: string = "";
 
   try {
+    // console.log(env, templateVtoPath)
     const template = await env.load(templateVtoPath);
     const finalData = {
       ...(processorData ? processorData : data),
-    }
+    };
 
     const result = await template(finalData);
 
@@ -205,10 +205,9 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
     if (outputPath) {
       await Deno.writeTextFile(outputPath, output);
     }
-  }
-  catch (err) {
+  } catch (err) {
     if (error) {
-      error(err);
+      error(err as Error);
     }
     console.error(err);
     failures.push(`vento template (${templateVtoPath})`);
@@ -229,7 +228,7 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
       } = await p.output();
 
       // Write output to stderr
-      if (flags.includes('print_info')) {
+      if (flags.includes("print_info")) {
         await Deno.stderr.write(stdout);
         await Deno.stderr.write(stderr);
       }
@@ -253,7 +252,7 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
       } = await p.output();
 
       // Write output to stderr
-      if (flags.includes('print_info')) {
+      if (flags.includes("print_info")) {
         await Deno.stderr.write(stdout);
         await Deno.stderr.write(stderr);
       }
@@ -264,55 +263,70 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
     }
   }
 
-  if (flags && flags.includes('print_info')) {
+  if (flags && flags.includes("print_info")) {
     const terminalWidth = Deno.consoleSize().columns;
     const printDivider = (char: string) => {
       const divider = char.repeat(Math.floor(terminalWidth * 0.67));
       return `${divider}\n`;
-    }
+    };
     const bold = (str: string) => `\x1b[1m${str}\x1b[22m`;
-    const colorize = (str: string, color: 'red' | 'green') => {
+    const colorize = (str: string, color: "red" | "green") => {
       const colors = {
         red: "\x1b[31m",
         green: "\x1b[32m",
-      }
+      };
       return `${colors[color]}${str}\x1b[0m`;
-    }
+    };
 
     await Deno.stderr.write(new TextEncoder().encode(printDivider("=")));
     const emoji = failures.length ? "⚠️" : "✅";
-    await Deno.stdout.write(new TextEncoder().encode(bold(colorize(`${emoji} Codegen finished ${failures.length ? "with errors" : "successfully"
-      } in ${Math.round(performance.now() - startTime)}ms\n`, failures.length ? 'red' : 'green'))));
+    await Deno.stdout.write(
+      new TextEncoder().encode(
+        bold(
+          colorize(
+            `${emoji} Codegen finished ${
+              failures.length ? "with errors" : "successfully"
+            } in ${Math.round(performance.now() - startTime)}ms\n`,
+            failures.length ? "red" : "green",
+          ),
+        ),
+      ),
+    );
 
     if (failures.length) {
-      const failStr = `Failed steps: \n\t· ${bold(failures.join("\n\t· "))}\n`
+      const failStr = `Failed steps: \n\t· ${bold(failures.join("\n\t· "))}\n`;
       await Deno.stderr.write(new TextEncoder().encode(failStr));
     }
     await Deno.stderr.write(new TextEncoder().encode(printDivider("=")));
   }
 
   if (failures.length && error) {
-    error(new Error(`Failed steps: ${failures
-      .map((f) => f.replace("deno ", ""))
-      .join(", ")}\n`));
+    error(
+      new Error(`Failed steps: ${
+        failures
+          .map((f) => f.replace("deno ", ""))
+          .join(", ")
+      }\n`),
+    );
   }
 
   return output;
-}
+};
 
 if (import.meta.main) {
   const cliArgs = parseArgs(Deno.args);
 
   if (!cliArgs.in || cliArgs._.length || cliArgs.help) {
     console.log(`Usage:
-  dgen --in <template.vto> --out <output.ts> --data <data.json> --processor <processor.ts> --flags fmt,check,print_info
+  dgen --in <template.vto> --out <output.ts> --data <data.json> --processor <processor.ts> --flags fmt,check,print_info --watch
 
 Options:
   --in          Path to the template file (vento .vto template), required
   --out         Path to the output file, optional, will print to stdout if not provided
   --data        Path to the data file (JSON or JSONC), optional
   --processor   Path to the JS/TS processor file, optional
-  --flags       Additional flags to run alongside the codegen process, optional
+  --flags       Additional flags to run alongside the codegen process, optional (set to none to skip defaults)
+  --watch       Watch for changes in template, data, and processor files
   --help        Print this help message
   `);
     Deno.exit(1);
@@ -325,21 +339,49 @@ Options:
     processorTsPath: cliArgs.processor,
     dataJsonPath: cliArgs.data,
     outputPath: cliArgs.out,
-    flags: cliArgs.flags ? cliArgs.flags.split(",").map((f: string) => f.trim()).filter(Boolean) as ('fmt' | 'check' | 'print_info')[] || undefined : undefined,
+    flags: cliArgs.flags
+      ? cliArgs.flags.split(",").map((f: string) => f.trim()).filter(
+        Boolean,
+      ) as ("fmt" | "check" | "print_info")[] || undefined
+      : undefined,
     error: (_err: Error) => {
       errors = true;
-    }
-  }
+    },
+  };
 
   // Filter out undefined values
-  // @ts-ignore Object keys are always strings
-  Object.keys(args).forEach((key) => args[key] === undefined && delete args[key]);
+  Object.keys(args).forEach((key) =>
+    args[key as keyof CodegenArgs] === undefined &&
+    delete args[key as keyof CodegenArgs]
+  );
 
-  const result = await codegen(args);
+  if (cliArgs.watch) {
+    await codegen(args);
+    console.log("Watching for file changes...");
 
-  if (!args.outputPath) {
-    console.log(result);
+    const watchPaths = [
+      args.templateVtoPath,
+      ...(args.processorTsPath ? [args.processorTsPath] : []),
+      ...(args.dataJsonPath ? [args.dataJsonPath] : []),
+    ];
+
+    const watcher = Deno.watchFs(watchPaths);
+
+    // Initial run
+    await codegen(args);
+
+    for await (const event of watcher) {
+      if (event.kind === "modify") {
+        await codegen(args);
+      }
+    }
+  } else {
+    const result = await codegen(args);
+
+    if (!args.outputPath) {
+      console.log(result);
+    }
+
+    Deno.exit(errors ? 1 : 0);
   }
-
-  Deno.exit(errors ? 1 : 0);
 }

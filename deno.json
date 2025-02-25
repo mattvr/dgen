@@ -1,5 +1,5 @@
 {
-  "name": "@mattvr/dgen",
-  "version": "0.0.2",
+  "name": "@orgsoft/dgen",
+  "version": "0.0.3",
   "exports": "./mod.ts"
 }
