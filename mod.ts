@@ -82,7 +82,7 @@ export type CodegenArgs = {
 /**
  * Default arguments for codegen(...) function
  */
-export const DEFAULT_ARGS: Partial<CodegenArgs> = {
+export const DEFAULT_ARGS_TS: Partial<CodegenArgs> = {
   templateVtoPath: "template.vto",
   filters: {
     upper: (str: string) => str.toUpperCase(),
@@ -95,6 +95,21 @@ export const DEFAULT_ARGS: Partial<CodegenArgs> = {
     },
   },
   flags: ["fmt", "check", "print_info"],
+};
+
+export const DEFAULT_ARGS: Partial<CodegenArgs> = {
+  templateVtoPath: "template.vto",
+  filters: {
+    upper: (str: string) => str.toUpperCase(),
+    lower: (str: string) => str.toLowerCase(),
+  },
+  data: {
+    name: "Bobert Paulson",
+    hello() {
+      return "sup dawg";
+    },
+  },
+  flags: ["print_info"],
 };
 
 /**
@@ -130,6 +145,11 @@ export const DEFAULT_ARGS: Partial<CodegenArgs> = {
  */
 export const codegen = async (args: CodegenArgs): Promise<string> => {
   const startTime = performance.now();
+  const defaults =
+    args.outputPath &&
+      (args.outputPath.endsWith(".ts") || args.outputPath.endsWith(".js"))
+      ? DEFAULT_ARGS_TS
+      : DEFAULT_ARGS;
   const {
     templateVtoPath,
     processorTsPath,
@@ -139,7 +159,7 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
     data,
     flags,
     error,
-  } = { ...DEFAULT_ARGS, ...args };
+  } = { ...defaults, ...args };
 
   const env = vento();
   const failures: string[] = [];
