@@ -2,6 +2,7 @@ import vento from "jsr:@vento/vento@^1.12";
 import { parse as parseJsonc } from "jsr:@std/jsonc@1";
 import { parseArgs } from "jsr:@std/cli@1";
 import * as path from "jsr:@std/path@1";
+import { Template } from "jsr:@vento/vento@^1.12.0/src/environment.ts";
 
 type Filter = ReturnType<typeof vento>["filters"][string];
 
@@ -12,7 +13,12 @@ export type CodegenArgs = {
   /**
    * Full path to the template file (vento .vto template)
    */
-  templateVtoPath: string;
+  templateVtoPath?: string;
+
+  /**
+   * String to use as the template, instead of a file path.
+   */
+  templateString?: string;
 
   /**
    * Full path to processor file [optional], which will pass data and
@@ -39,10 +45,23 @@ export type CodegenArgs = {
   processorTsPath?: string;
 
   /**
+   * Function to use as the processor, instead of a file path.
+   */
+  processorTsFunction?: (dataJson: Record<string, unknown>) => {
+    data: Record<string, unknown>;
+    filters: Record<string, Filter>;
+  };
+
+  /**
    * JSON string to pass to the template as data.
    * This can be either a JSON or JSONC (JSON with comments) file.
    */
   dataJsonPath?: string;
+
+  /**
+   * JSON string to pass to the template as data.
+   */
+  dataJson?: any;
 
   /**
    * Full path to the final output file, can be any file type (.ts, .json, .md, etc.)
@@ -83,7 +102,7 @@ export type CodegenArgs = {
  * Default arguments for codegen(...) function
  */
 export const DEFAULT_ARGS_TS: Partial<CodegenArgs> = {
-  templateVtoPath: "template.vto",
+  // templateVtoPath: "template.vto",
   filters: {
     upper: (str: string) => str.toUpperCase(),
     lower: (str: string) => str.toLowerCase(),
@@ -98,7 +117,7 @@ export const DEFAULT_ARGS_TS: Partial<CodegenArgs> = {
 };
 
 export const DEFAULT_ARGS: Partial<CodegenArgs> = {
-  templateVtoPath: "template.vto",
+  // templateVtoPath: "template.vto",
   filters: {
     upper: (str: string) => str.toUpperCase(),
     lower: (str: string) => str.toLowerCase(),
@@ -143,7 +162,7 @@ export const DEFAULT_ARGS: Partial<CodegenArgs> = {
  * @param args.error Optional error handler
  * @returns Generated code as a string
  */
-export const codegen = async (args: CodegenArgs): Promise<string> => {
+export const dgen = async (args: CodegenArgs): Promise<string> => {
   const startTime = performance.now();
   const defaults =
     args.outputPath &&
@@ -152,8 +171,11 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
       : DEFAULT_ARGS;
   const {
     templateVtoPath,
+    templateString,
     processorTsPath,
+    processorTsFunction,
     dataJsonPath,
+    dataJson,
     outputPath,
     filters,
     data,
@@ -182,6 +204,8 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
       console.error(err);
       failures.push(`data (${dataJsonPath})`);
     }
+  } else if (dataJson) {
+    processorData = dataJson;
   }
 
   if (processorTsPath) {
@@ -202,6 +226,11 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
       console.error(err);
       failures.push(`processor (${processorTsPath})`);
     }
+  } else if (processorTsFunction) {
+    const result = processorTsFunction(processorData ?? {});
+
+    processorData = result.data;
+    processorFilters = result.filters;
   }
 
   if (processorFilters) {
@@ -214,7 +243,14 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
 
   try {
     // console.log(env, templateVtoPath)
-    const template = await env.load(templateVtoPath);
+    let template: Template;
+    if (templateVtoPath) {
+      template = await env.load(templateVtoPath);
+    } else if (templateString) {
+      template = await env.compile(templateString);
+    } else {
+      throw new Error("No template provided");
+    }
     const finalData = {
       ...(processorData ? processorData : data),
     };
@@ -334,6 +370,8 @@ export const codegen = async (args: CodegenArgs): Promise<string> => {
   return output;
 };
 
+export default dgen;
+
 if (import.meta.main) {
   const cliArgs = parseArgs(Deno.args);
 
@@ -377,27 +415,27 @@ Options:
   );
 
   if (cliArgs.watch) {
-    await codegen(args);
+    await dgen(args);
     console.log("Watching for file changes...");
 
     const watchPaths = [
-      args.templateVtoPath,
+      ...(args.templateVtoPath ? [args.templateVtoPath] : []),
       ...(args.processorTsPath ? [args.processorTsPath] : []),
       ...(args.dataJsonPath ? [args.dataJsonPath] : []),
-    ];
+    ].filter(Boolean) as string[];
 
     const watcher = Deno.watchFs(watchPaths);
 
     // Initial run
-    await codegen(args);
+    await dgen(args);
 
     for await (const event of watcher) {
       if (event.kind === "modify") {
-        await codegen(args);
+        await dgen(args);
       }
     }
   } else {
-    const result = await codegen(args);
+    const result = await dgen(args);
 
     if (!args.outputPath) {
       console.log(result);
